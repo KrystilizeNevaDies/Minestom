@@ -1,6 +1,8 @@
 package net.minestom.server.collision;
 
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.event.entity.EntityBlockCollideEvent;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.WorldBorder;
@@ -38,6 +40,20 @@ public class CollisionUtils {
 
         final StepResult zCollision = stepAxis(instance, originChunk, xCollision.newPosition, Z_AXIS, deltaPosition.z(),
                 deltaPosition.z() > 0 ? boundingBox.getBackFace() : boundingBox.getFrontFace());
+
+        // Get the collision direction
+        Vec collisionDirection = deltaPosition.normalize();
+
+        // Call event
+        EntityBlockCollideEvent event = new EntityBlockCollideEvent(entity, instance, collisionDirection);
+
+        MinecraftServer.getGlobalEventHandler().call(event);
+
+        // If the event is cancelled, add the correct displacement
+        if (event.isCancelled()) {
+            return new PhysicsResult(currentPosition.add(deltaPosition),
+                    deltaPosition, yCollision.foundCollision && deltaPosition.y() < 0);
+        }
 
         return new PhysicsResult(currentPosition.withCoord(zCollision.newPosition),
                 deltaPosition.apply(((x, y, z) -> new Vec(
