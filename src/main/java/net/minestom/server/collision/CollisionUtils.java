@@ -41,18 +41,20 @@ public class CollisionUtils {
         final StepResult zCollision = stepAxis(instance, originChunk, xCollision.newPosition, Z_AXIS, deltaPosition.z(),
                 deltaPosition.z() > 0 ? boundingBox.getBackFace() : boundingBox.getFrontFace());
 
-        // Get the collision direction
-        Vec collisionDirection = deltaPosition.normalize();
+        // Check for collision
+        if (xCollision.foundCollision || yCollision.foundCollision || zCollision.foundCollision) {
+            // Get the collision direction
+            Vec collisionDirection = deltaPosition.normalize();
 
-        // Call event
-        EntityBlockCollideEvent event = new EntityBlockCollideEvent(entity, instance, collisionDirection);
+            // Call event
+            EntityBlockCollideEvent event = new EntityBlockCollideEvent(entity, instance, collisionDirection);
+            MinecraftServer.getGlobalEventHandler().call(event);
 
-        MinecraftServer.getGlobalEventHandler().call(event);
-
-        // If the event is cancelled, add the correct displacement
-        if (event.isCancelled()) {
-            return new PhysicsResult(currentPosition.add(deltaPosition),
-                    deltaPosition, yCollision.foundCollision && deltaPosition.y() < 0);
+            // If the event is cancelled, add the correct displacement
+            if (event.isCancelled()) {
+                return new PhysicsResult(currentPosition.add(deltaPosition),
+                        deltaPosition, yCollision.foundCollision && deltaPosition.y() < 0);
+            }
         }
 
         return new PhysicsResult(currentPosition.withCoord(zCollision.newPosition),
